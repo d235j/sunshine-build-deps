@@ -6,7 +6,7 @@ on:
     branches: [master, nightly]
     types: [opened, synchronize, reopened]
   push:
-    branches: [master]
+    branches: [master, debug]
   workflow_dispatch:
 
 concurrency:
@@ -367,7 +367,7 @@ jobs:
           PATH="$root_path/bin:$PATH" cmake -G "${{ matrix.cmake_generator }}" \
             $extra_configure \
             -DCMAKE_INSTALL_PREFIX="$root_path/ffmpeg_build" \
-            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_BUILD_TYPE=Debug \
             -DBUILD_APPS=OFF \
             -DBUILD_DEC=OFF \
             -DENABLE_AVX512=ON \
@@ -403,7 +403,7 @@ jobs:
           )
           elif [[ ${{ matrix.os_type }} == "macos" && ${{ matrix.arch }} != "x86_64" ]]; then
             export CC="clang"
-            export CFLAGS="${{ steps.cross.outputs.CFLAGS }}"
+            export CFLAGS="-O0 ${{ steps.cross.outputs.CFLAGS }}"
             extra_configure=$(cat <<- VAREOF
               --host=${{ matrix.arch }}-darwin
           VAREOF
@@ -417,6 +417,7 @@ jobs:
             PKG_CONFIG_PATH="$root_path/ffmpeg_build/lib/pkgconfig" \
             ./configure \
             $extra_configure \
+            --enable-debug \
             --prefix="$root_path/ffmpeg_build" \
             --bindir="$root_path/bin" \
             --disable-cli \
@@ -463,6 +464,7 @@ jobs:
           PATH="$root_path/bin:$PATH" cmake -G "${{ matrix.cmake_generator }}" \
             $extra_configure \
             -DCMAKE_INSTALL_PREFIX="$root_path/ffmpeg_build" \
+            -DCMAKE_BUILD_TYPE=Debug \
             -DENABLE_CLI=OFF \
             -DENABLE_SHARED=OFF \
             -DSTATIC_LINK_CRT=ON \
@@ -541,6 +543,8 @@ jobs:
             PKG_CONFIG_PATH="$root_path/ffmpeg_build/lib/pkgconfig:/usr/lib/${{ matrix.host }}/pkgconfig" \
             ./configure \
             $extra_configure \
+            --enable-debug \
+            --disable-optimizations \
             --prefix="$root_path/ffmpeg_build" \
             --pkg-config-flags="--static" \
             --extra-cflags="-I$root_path/ffmpeg_build/include" \
@@ -612,6 +616,7 @@ jobs:
           echo "::group::configure"
           PATH="$root_path/bin:$PATH" cmake -G "${{ matrix.cmake_generator }}" \
             $extra_configure \
+            -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_INSTALL_PREFIX="$root_path/ffmpeg_build" \
             -DFFMPEG_CBS=ON \
             ..
